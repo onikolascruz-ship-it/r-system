@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js'
  const supabaseKey = import.meta.env.VITE_SUPABASE_KEY
 
 // --- OPÇÃO 2: MODO ESTUDO (Para usar no seu PC agora) ---
-//const supabaseUrl = 'https://olcmgvpddtfgujpajanz.supabase.co'
-// const supabaseKey = 'sb_publishable_GwidpJlXXDXGXUBrzPCj3A_zqlj5adA'
+ //const supabaseUrl = 'https://olcmgvpddtfgujpajanz.supabase.co'
+ //const supabaseKey = 'sb_publishable_GwidpJlXXDXGXUBrzPCj3A_zqlj5adA'
 
 export const supabase = createClient(supabaseUrl, supabaseKey)

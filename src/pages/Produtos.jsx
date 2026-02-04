@@ -1,95 +1,154 @@
-import React, { useState, useEffect } from 'react'
-import { supabase } from '../supabase'
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../supabase';
+import { useNavigate } from 'react-router-dom';
 
 export default function Produtos() {
-  const [listaProdutos, setListaProdutos] = useState([])
-  const [nome, setNome] = useState('')
-  const [preco, setPreco] = useState('')
-  const [editandoId, setEditandoId] = useState(null) // Guarda o ID se estiver editando
+  const navigate = useNavigate();
+  const [produtos, setProdutos] = useState([]);
+  const [novoProduto, setNovoProduto] = useState({ nome: '', preco: '', categoria: 'Lanches' });
+  const [loading, setLoading] = useState(true);
 
-  const carregarProdutos = async () => {
-    const { data } = await supabase.from('produtos').select('*').order('nome')
-    if (data) setListaProdutos(data)
-  }
+  useEffect(() => {
+    buscarProdutos();
+  }, []);
 
-  useEffect(() => { carregarProdutos() }, [])
-
-  // Função unificada: Cria ou Atualiza
-  const salvarProduto = async (e) => {
-    e.preventDefault()
-    if (!nome || !preco) return
-
-    const precoFormatado = parseFloat(preco.toString().replace(',', '.'))
-
-    if (editandoId) {
-      // MODO EDIÇÃO: Atualiza o existente
-      await supabase.from('produtos').update({ nome, preco: precoFormatado }).eq('id', editandoId)
-      alert('Produto atualizado!')
-    } else {
-      // MODO CRIAÇÃO: Cria um novo
-      await supabase.from('produtos').insert({ nome, preco: precoFormatado })
-      alert('Produto cadastrado!')
+  const buscarProdutos = async () => {
+    try {
+      const { data, error } = await supabase.from('produtos').select('*').order('nome');
+      if (error) throw error;
+      setProdutos(data);
+    } catch (error) {
+      alert('Erro ao carregar produtos.');
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    // Limpa o formulário e recarrega
-    setNome('')
-    setPreco('')
-    setEditandoId(null)
-    carregarProdutos()
-  }
+  const adicionarProduto = async (e) => {
+    e.preventDefault();
+    if (!novoProduto.nome || !novoProduto.preco) return alert('Preencha todos os campos');
 
-  const prepararEdicao = (produto) => {
-    setNome(produto.nome)
-    setPreco(produto.preco)
-    setEditandoId(produto.id)
-  }
+    try {
+      const { error } = await supabase.from('produtos').insert([{
+        nome: novoProduto.nome,
+        preco: parseFloat(novoProduto.preco),
+        categoria: novoProduto.categoria
+      }]);
 
-  const deletarProduto = async (id) => {
-    if (confirm('Tem certeza?')) {
-      await supabase.from('produtos').delete().eq('id', id)
-      carregarProdutos()
+      if (error) throw error;
+
+      alert('Produto adicionado com sucesso!');
+      setNovoProduto({ nome: '', preco: '', categoria: 'Lanches' }); // Limpa form
+      buscarProdutos(); // Recarrega lista
+    } catch (error) {
+      alert('Erro ao cadastrar produto.');
+      console.error(error);
     }
-  }
+  };
+
+  const removerProduto = async (id) => {
+    if (!window.confirm('Tem certeza que deseja excluir este produto?')) return;
+
+    try {
+      const { error } = await supabase.from('produtos').delete().eq('id', id);
+      if (error) throw error;
+      buscarProdutos();
+    } catch (error) {
+      alert('Erro ao excluir.');
+    }
+  };
 
   return (
-    <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
-      <h1>📦 Gerenciar Cardápio</h1>
-
-      <form onSubmit={salvarProduto} style={{ display: 'flex', gap: '10px', marginBottom: '30px', padding: '20px', background: editandoId ? '#fff3cd' : '#f8f9fa', borderRadius: '8px', border: editandoId ? '2px solid #ffc107' : '1px solid #ddd' }}>
-        <input 
-          type="text" placeholder="Nome do produto" 
-          value={nome} onChange={(e) => setNome(e.target.value)}
-          style={{ flex: 1, padding: '10px' }}
-        />
-        <input 
-          type="number" step="0.01" placeholder="Preço" 
-          value={preco} onChange={(e) => setPreco(e.target.value)}
-          style={{ width: '150px', padding: '10px' }}
-        />
-        <button type="submit" style={{ padding: '10px 20px', background: editandoId ? '#ffc107' : '#28a745', color: editandoId ? 'black' : 'white', border: 'none', cursor: 'pointer', borderRadius: '5px', fontWeight: 'bold' }}>
-          {editandoId ? '💾 Atualizar' : '+ Salvar'}
+    <div style={{ minHeight: '100vh', backgroundColor: '#ecf0f1', fontFamily: 'Arial' }}>
+      
+      {/* BARRA DE NAVEGAÇÃO */}
+      <div style={{ padding: '10px 20px', backgroundColor: '#34495e', display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <button 
+          onClick={() => navigate(-1)} 
+          style={{ padding: '8px 15px', backgroundColor: '#95a5a6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+        >
+          &lt;
         </button>
-        {editandoId && (
-          <button type="button" onClick={() => { setEditandoId(null); setNome(''); setPreco('') }} style={{ padding: '10px', background: '#6c757d', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
-            Cancelar
-          </button>
-        )}
-      </form>
+        <button 
+          onClick={() => navigate('/')} 
+          style={{ padding: '8px 15px', backgroundColor: '#2980b9', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+        >
+          Home
+        </button>
+        <h2 style={{ color: 'white', margin: '0 0 0 15px', fontSize: '18px' }}>Gestao de Produtos</h2>
+      </div>
 
-      <ul style={{ listStyle: 'none', padding: 0 }}>
-        {listaProdutos.map(prod => (
-          <li key={prod.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '15px', borderBottom: '1px solid #eee', alignItems: 'center' }}>
-            <div>
-              <strong>{prod.nome}</strong>
-              <div style={{ color: '#666' }}>R$ {prod.preco.toFixed(2)}</div>
-            </div>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={() => prepararEdicao(prod)} style={{ background: '#007bff', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '4px', cursor: 'pointer' }}>✏️ Editar</button>
-              <button onClick={() => deletarProduto(prod.id)} style={{ background: '#dc3545', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '4px', cursor: 'pointer' }}>🗑️</button>
-            </div>
-          </li>
-        ))}
-      </ul>
+      <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
+        
+        {/* FORMULÁRIO DE CADASTRO */}
+        <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.1)', marginBottom: '20px' }}>
+          <h3 style={{ marginTop: 0, color: '#2c3e50' }}>Novo Produto</h3>
+          <form onSubmit={adicionarProduto} style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <input 
+              type="text" 
+              placeholder="Nome do Produto" 
+              value={novoProduto.nome}
+              onChange={e => setNovoProduto({...novoProduto, nome: e.target.value})}
+              style={{ flex: 2, padding: '10px', borderRadius: '4px', border: '1px solid #bdc3c7' }}
+            />
+            <select 
+              value={novoProduto.categoria}
+              onChange={e => setNovoProduto({...novoProduto, categoria: e.target.value})}
+              style={{ flex: 1, padding: '10px', borderRadius: '4px', border: '1px solid #bdc3c7' }}
+            >
+              <option value="Lanches">Lanches</option>
+              <option value="Bebidas">Bebidas</option>
+              <option value="Porcoes">Porcoes</option>
+              <option value="Sobremesas">Sobremesas</option>
+            </select>
+            <input 
+              type="number" 
+              placeholder="Preco (R$)" 
+              step="0.01"
+              value={novoProduto.preco}
+              onChange={e => setNovoProduto({...novoProduto, preco: e.target.value})}
+              style={{ flex: 1, padding: '10px', borderRadius: '4px', border: '1px solid #bdc3c7' }}
+            />
+            <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#27ae60', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+              SALVAR
+            </button>
+          </form>
+        </div>
+
+        {/* LISTA DE PRODUTOS */}
+        {loading ? <p>Carregando...</p> : (
+          <div style={{ backgroundColor: 'white', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#f1f2f6', color: '#7f8c8d' }}>
+                  <th style={{ padding: '15px', textAlign: 'left' }}>Nome</th>
+                  <th style={{ padding: '15px', textAlign: 'left' }}>Categoria</th>
+                  <th style={{ padding: '15px', textAlign: 'left' }}>Preco</th>
+                  <th style={{ padding: '15px', textAlign: 'center' }}>Acoes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {produtos.map(prod => (
+                  <tr key={prod.id} style={{ borderBottom: '1px solid #eee' }}>
+                    <td style={{ padding: '15px' }}>{prod.nome}</td>
+                    <td style={{ padding: '15px' }}>{prod.categoria}</td>
+                    <td style={{ padding: '15px', fontWeight: 'bold', color: '#27ae60' }}>R$ {prod.preco.toFixed(2)}</td>
+                    <td style={{ padding: '15px', textAlign: 'center' }}>
+                      <button 
+                        onClick={() => removerProduto(prod.id)}
+                        style={{ padding: '5px 10px', backgroundColor: '#e74c3c', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                      >
+                        Excluir
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
-  )
+  );
 }

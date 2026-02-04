@@ -30,7 +30,7 @@ export default function Login() {
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#2c3e50' }}>
-      <h1 style={{ color: 'white', marginBottom: '20px' }}>🔐 R-System Pro</h1>
+      <h1 style={{ color: 'white', marginBottom: '20px' }}>R-System</h1>
       <form onSubmit={handleLogin} style={{ backgroundColor: 'white', padding: '30px', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '15px', width: '300px' }}>
         
         <label>Email</label>
@@ -38,7 +38,7 @@ export default function Login() {
           type="email" 
           value={email} 
           onChange={e => setEmail(e.target.value)}
-          placeholder="admin@restaurante.com"
+          placeholder=""
           style={{ padding: '10px', borderRadius: '5px', border: '1px solid #ccc' }}
           required
         />
@@ -48,7 +48,7 @@ export default function Login() {
           type="password" 
           value={senha} 
           onChange={e => setSenha(e.target.value)}
-          placeholder="Sua senha secreta"
+          placeholder=""
           style={{ padding: '10px', borderRadius: '5px', border: '1px solid #ccc' }}
           required
         />
